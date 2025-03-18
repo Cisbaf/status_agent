@@ -2,7 +2,7 @@ services:
   kafka:
     image: bitnami/kafka:latest
     container_name: kafka-status-agent
-    restart: on-failure
+    restart: always
     ports:
       - 9092:9092
     environment:
