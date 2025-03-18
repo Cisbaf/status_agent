@@ -71,11 +71,12 @@ class MonitoringStatusAgent:
         # Loop para consultar a API periodicamente
         while True:
             now = self.get_date_time()
-            api_data = self.api.request()
+            api_data = self.api.get()
             for data in api_data:
                 if data['id'] not in self.lasts_api_data:
                     self.lasts_api_data[data['id']] = data  # Se for a primeira vez que vimos esse 'id', adicionamos aos dados
-                
+                    self.register_updates(data.copy(), None, now)
+                    
                 # Obtém as atualizações de dados
                 updates = self.get_updates(data)
                 
