@@ -24,6 +24,7 @@ services:
     container_name: zookeeper-status-agent
     ports:
       - 2181:2181
+    restart: always
     environment:
       - ALLOW_ANONYMOUS_LOGIN=yes
     networks:
@@ -53,6 +54,7 @@ services:
       MONGO_INITDB_ROOT_PASSWORD: 7890380
     volumes:
       - mongo_data:/data/db
+    restart: always
     ports:
       - "27017:27017"
     networks:
@@ -69,6 +71,7 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: admingeral
     ports:
       - "8081:8081"
+    restart: always
     networks:
       - application_network
     depends_on:
@@ -83,6 +86,7 @@ services:
       - kafka
     env_file:
       - .env
+    restart: always
     networks:
       - application_network
 
@@ -91,6 +95,7 @@ services:
     build:
       context: .
       dockerfile: ./consumer/Dockerfile
+    restart: always
     depends_on:
       - kafka
       - mongo
