@@ -29,8 +29,8 @@ class ApiRequest:
                 value=time_response
             )
             return response
-        except requests.exceptions.RequestException as e:
-            message_error = f'Erro ao solicitar API ({datetime.now().strftime("%d/%m/%Y, %H:%M:%S")})'
+        except requests.exceptions.RequestException as err:
+            message_error = f'Erro ao solicitar API | {err} | ({datetime.now().strftime("%d/%m/%Y, %H:%M:%S")})'
             self.producer.send(
                 self.topic,
                 key='Error'.encode('utf-8'),
