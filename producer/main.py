@@ -7,6 +7,7 @@ topic_status_agent = os.getenv("TOPIC_STATUS_AGENT")
 topic_api = os.getenv("TOPIC_API")
 api_uri = os.getenv("API_URI")
 kafka_uri = os.getenv("KAFKA_URI")
+timeout_api = os.getenv("TIMEOUT_API")
 
 # Inicializar Algoritimo
 if __name__ == '__main__':
@@ -17,7 +18,8 @@ if __name__ == '__main__':
     api = ApiRequest(
         url=api_uri,
         kafka_uri=kafka_uri,
-        topic_api=topic_api
+        topic_api=topic_api,
+        timeout=int(timeout_api)
     )
     # Inicializa Classe de Monitoramento
     monitoring = MonitoringStatusAgent(

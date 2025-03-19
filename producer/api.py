@@ -1,14 +1,16 @@
 import requests
 import xmltodict
 import json
+import os
 from kafka import KafkaProducer
 from datetime import datetime
 
 class ApiRequest:
 
-    def __init__(self, url: str, kafka_uri: str, topic_api: str):
+    def __init__(self, url: str, kafka_uri: str, topic_api: str, timeout: int):
         self.url = url
         self.topic = topic_api
+        self.timeout = timeout
         self.producer = KafkaProducer(
             bootstrap_servers=kafka_uri,
             api_version=(3, 8, 0),
@@ -18,7 +20,7 @@ class ApiRequest:
 
     def request(self):
         try:
-            response = requests.get(self.url)
+            response = requests.get(self.url, timeout=self.timeout)
             response.raise_for_status()
             time_response = response.elapsed.total_seconds()
             self.producer.send(
