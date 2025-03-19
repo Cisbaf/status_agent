@@ -11,7 +11,11 @@ timeout_api = os.getenv("TIMEOUT_API")
 
 # Inicializar Algoritimo
 if __name__ == '__main__':
-    if not topic_status_agent or not api_uri or not kafka_uri or not topic_api:
+    if (not topic_status_agent
+        or not api_uri
+        or not kafka_uri
+        or not topic_api
+        or not timeout_api):
         raise Exception("Erro ao obter variaveis de ambiente")
     
     # Inicializa Classe de Request API

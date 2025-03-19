@@ -25,7 +25,7 @@ class ApiRequest:
             time_response = response.elapsed.total_seconds()
             self.producer.send(
                 self.topic,
-                key=str(int(time_response)).encode('utf-8'),
+                key=f'Response {int(time_response)}'.encode('utf-8'),
                 value=time_response
             )
             return response
