@@ -1,7 +1,6 @@
 import requests
 import xmltodict
 import json
-import os
 from kafka import KafkaProducer
 from datetime import datetime
 
@@ -31,11 +30,18 @@ class ApiRequest:
             return response
         except requests.exceptions.RequestException as err:
             message_error = f'Erro ao solicitar API | {err} | ({datetime.now().strftime("%d/%m/%Y, %H:%M:%S")})'
-            self.producer.send(
-                self.topic,
-                key='Error'.encode('utf-8'),
-                value=message_error
-            )
+            if isinstance(err, requests.exceptions.Timeout):
+                self.producer.send(
+                    self.topic,
+                    key='Timeout'.encode('utf-8'),
+                    value=message_error
+                )
+            else:
+                self.producer.send(
+                    self.topic,
+                    key='Error'.encode('utf-8'),
+                    value=message_error
+                )
             print(message_error)
             return None
     

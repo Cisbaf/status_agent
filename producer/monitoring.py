@@ -1,7 +1,7 @@
 from kafka import KafkaProducer
 from api import ApiRequest
 from datetime import datetime, timezone, timedelta
-import pytz, json
+import pytz, json, time
 
 class MonitoringStatusAgent:
 
@@ -16,9 +16,8 @@ class MonitoringStatusAgent:
         )
         self.api = api
 
-    def get_date_time(self):
-        # Retorna a data e hora atual em São Paulo
-        return datetime.now(timezone.utc).astimezone(pytz.timezone('America/Sao_Paulo'))
+    def convert_time(self, dt: datetime):
+        return dt.astimezone(timezone.utc).astimezone(pytz.timezone('America/Sao_Paulo'))
     
     def get_updates(self, data: dict):
         # Verifica se já existem dados anteriores para o 'id' e obtém as diferenças
@@ -70,17 +69,25 @@ class MonitoringStatusAgent:
     def run(self):
         # Loop para consultar a API periodicamente
         while True:
-            now = self.get_date_time()
+            now = datetime.now()
+            dt_timezone = self.convert_time(now)
             api_data = self.api.get()
             for data in api_data:
                 if data['id'] not in self.lasts_api_data:
                     self.lasts_api_data[data['id']] = data  # Se for a primeira vez que vimos esse 'id', adicionamos aos dados
-                    self.register_updates(data.copy(), None, now)
+                    self.register_updates(data.copy(), None, dt_timezone)
                     
                 # Obtém as atualizações de dados
                 updates = self.get_updates(data)
                 
                 # Se houver alterações, registra no Kafka
                 if updates:
-                    self.register_updates(data.copy(), updates, now)
+                    self.register_updates(data.copy(), updates, dt_timezone)
                     self.lasts_api_data[data['id']] = data  # Atualiza os dados com as últimas informações
+            
+            # Medindo tempo de execução para fazer uma requisição por segundo
+     
+            tempo_exec = (datetime.now() - now).total_seconds()
+            if tempo_exec < 0.5:
+                time.sleep(0.5 - tempo_exec)
+            
