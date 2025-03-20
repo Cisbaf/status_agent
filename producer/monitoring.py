@@ -88,6 +88,6 @@ class MonitoringStatusAgent:
             # Medindo tempo de execução para fazer uma requisição por segundo
      
             tempo_exec = (datetime.now() - now).total_seconds()
-            if tempo_exec < 0.5:
-                time.sleep(0.5 - tempo_exec)
+            if tempo_exec < 1:
+                time.sleep(1 - tempo_exec)
             
