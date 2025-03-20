@@ -1,53 +1,43 @@
 import requests
 import xmltodict
-import json
 from kafka import KafkaProducer
 from datetime import datetime
+from utils import convert_time
+
 
 class ApiRequest:
 
-    def __init__(self, url: str, kafka_uri: str, topic_api: str, timeout: int):
+    def __init__(self, url: str, timeout: int, topic_api: str, producer: KafkaProducer):
         self.url = url
         self.topic = topic_api
         self.timeout = timeout
-        self.producer = KafkaProducer(
-            bootstrap_servers=kafka_uri,
-            api_version=(3, 8, 0),
-            value_serializer=lambda v: json.dumps(v).encode('utf-8'),  # Serializar a mensagem para JSON
-            key_serializer=lambda k: k.encode('utf-8') if isinstance(k, str) else k  # Serializar chave, se for string
-        )
+        self.producer = producer
 
-    def request(self):
+    def _get_data_(self):
         try:
             response = requests.get(self.url, timeout=self.timeout)
             response.raise_for_status()
-            time_response = response.elapsed.total_seconds()
-            self.producer.send(
-                self.topic,
-                key=f'Response {int(time_response)}'.encode('utf-8'),
-                value=time_response
-            )
             return response
         except requests.exceptions.RequestException as err:
-            message_error = f'Erro ao solicitar API | {err} | ({datetime.now().strftime("%d/%m/%Y, %H:%M:%S")})'
+            dt = convert_time(datetime.now()).strftime("%d/%m/%Y, %H:%M:%S")
+            message_error = f'{err} | ({dt})'
+
             if isinstance(err, requests.exceptions.Timeout):
-                self.producer.send(
-                    self.topic,
-                    key='Timeout'.encode('utf-8'),
-                    value=message_error
-                )
+                key = 'TimeOut'
             else:
-                self.producer.send(
-                    self.topic,
-                    key='Error'.encode('utf-8'),
-                    value=message_error
-                )
+                key = 'OtherError'
+
+            self.producer.send(
+                self.topic,
+                key=key.encode('utf-8'),
+                value=message_error
+            )
             print(message_error)
             return None
     
     def get(self):
         # Realiza uma requisição
-        response = self.request()
+        response = self._get_data_()
 
         # Retorna uma lista vazia em caso de erro
         if not response:

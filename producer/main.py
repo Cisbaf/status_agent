@@ -1,6 +1,7 @@
 from monitoring import MonitoringStatusAgent
 from api import ApiRequest
 import os
+from utils import make_producer
 
 # Obter Variaveis de Ambiente
 topic_status_agent = os.getenv("TOPIC_STATUS_AGENT")
@@ -21,15 +22,15 @@ if __name__ == '__main__':
     # Inicializa Classe de Request API
     api = ApiRequest(
         url=api_uri,
-        kafka_uri=kafka_uri,
+        timeout=int(timeout_api),
         topic_api=topic_api,
-        timeout=int(timeout_api)
+        producer=make_producer(kafka_uri)
     )
     # Inicializa Classe de Monitoramento
     monitoring = MonitoringStatusAgent(
-        topic=topic_status_agent,
-        kafka_uri=kafka_uri,
-        api=api
+        api=api,
+        producer=make_producer(kafka_uri),
+        topic=topic_status_agent
     )
     # Starta o Looping de Monitoramento
     monitoring.run()
