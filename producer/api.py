@@ -1,13 +1,13 @@
 import requests
 import xmltodict
-from kafka import KafkaProducer
+from control_producer import CachedKafkaProducer
 from datetime import datetime
 from utils import convert_time
 
 
 class ApiRequest:
 
-    def __init__(self, url: str, timeout: int, topic_api: str, producer: KafkaProducer):
+    def __init__(self, url: str, timeout: int, topic_api: str, producer: CachedKafkaProducer):
         self.url = url
         self.topic = topic_api
         self.timeout = timeout
@@ -17,6 +17,7 @@ class ApiRequest:
         try:
             response = requests.get(self.url, timeout=self.timeout)
             response.raise_for_status()
+            self.producer.send(self.topic, response.elapsed.total_seconds(), 'teste')
             return response
         except requests.exceptions.RequestException as err:
             dt = convert_time(datetime.now()).strftime("%d/%m/%Y, %H:%M:%S")

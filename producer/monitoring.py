@@ -1,4 +1,4 @@
-from kafka import KafkaProducer
+from control_producer import CachedKafkaProducer
 from api import ApiRequest
 from datetime import datetime, timedelta
 import time
@@ -6,7 +6,7 @@ from utils import convert_time
 
 class MonitoringStatusAgent:
 
-    def __init__(self, api: ApiRequest, producer: KafkaProducer, topic: str):
+    def __init__(self, api: ApiRequest, producer: CachedKafkaProducer, topic: str):
         self.api = api
         self.producer =producer
         self.topic = topic
@@ -33,7 +33,7 @@ class MonitoringStatusAgent:
             self.producer.send(
                 topic=self.topic,
                 key=str(data['id']).encode('utf-8'),
-                value=data
+                value=data,
             )
         except Exception as e:
             # Se houver erro ao enviar a mensagem para o Kafka, imprime o erro
@@ -68,11 +68,12 @@ class MonitoringStatusAgent:
             dt_timezone = convert_time(now)
             api_data = self.api.get()
             for data in api_data:
-                # checa se o id já está registrado para monitoração
-                self._check_registry_(data, dt_timezone)
+                if data['id'] == '109802508705':
+                    # checa se o id já está registrado para monitoração
+                    self._check_registry_(data, dt_timezone)
 
-                # checa se tem mudanças e registra mudanças
-                self._check_updates_(data, dt_timezone)
+                    # checa se tem mudanças e registra mudanças
+                    self._check_updates_(data, dt_timezone)
 
             # Medindo tempo de execução para fazer uma requisição por segundo
             tempo_exec = (datetime.now() - now).total_seconds()
