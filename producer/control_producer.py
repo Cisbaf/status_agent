@@ -45,7 +45,6 @@ class CachedKafkaProducer:
                 # Remove da fila após sucesso
                 with self.lock:
                     self.queue.popleft()
-                print(f"Mensagem enviada: {topic}-{key}")
             except (KafkaError, TimeoutError) as e:
                 print(f"Erro ao enviar ({topic}-{key}): {e}. Retentando...")
                 time.sleep(1)  # Espera antes de retentar

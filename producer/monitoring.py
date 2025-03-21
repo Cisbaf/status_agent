@@ -68,12 +68,11 @@ class MonitoringStatusAgent:
             dt_timezone = convert_time(now)
             api_data = self.api.get()
             for data in api_data:
-                if data['id'] == '109802508705':
-                    # checa se o id já está registrado para monitoração
-                    self._check_registry_(data, dt_timezone)
+                # checa se o id já está registrado para monitoração
+                self._check_registry_(data, dt_timezone)
 
-                    # checa se tem mudanças e registra mudanças
-                    self._check_updates_(data, dt_timezone)
+                # checa se tem mudanças e registra mudanças
+                self._check_updates_(data, dt_timezone)
 
             # Medindo tempo de execução para fazer uma requisição por segundo
             tempo_exec = (datetime.now() - now).total_seconds()
