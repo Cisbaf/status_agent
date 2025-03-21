@@ -17,7 +17,6 @@ class ApiRequest:
         try:
             response = requests.get(self.url, timeout=self.timeout)
             response.raise_for_status()
-            self.producer.send(self.topic, response.elapsed.total_seconds())
             return response
         except requests.exceptions.RequestException as err:
             dt = convert_time(datetime.now()).strftime("%d/%m/%Y, %H:%M:%S")
