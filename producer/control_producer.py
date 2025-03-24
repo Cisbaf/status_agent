@@ -14,7 +14,6 @@ class CachedKafkaProducer:
             key_serializer=lambda k: k.encode('utf-8') if isinstance(k, str) else k,
             max_block_ms=1000,  # Espera até 1s por metadados/espaço no buffer
             retries=0,  # Desativa retentativas internas do KafkaProducer
-            enable_idempotence=True  # Garante que retentativas não criem duplicatas
         )
         self.queue = deque()
         self.lock = threading.Lock()
