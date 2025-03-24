@@ -7,15 +7,16 @@ from utils import convert_time
 
 class ApiRequest:
 
-    def __init__(self, url: str, timeout: int, topic_api: str, producer: CachedKafkaProducer):
+    def __init__(self, url: str, topic_api: str, producer: CachedKafkaProducer, timeout_conn=1, timeout_read=1):
         self.url = url
         self.topic = topic_api
-        self.timeout = timeout
+        self.timeout_conn = timeout_conn
+        self.timeout_read = timeout_read
         self.producer = producer
 
     def _get_data_(self):
         try:
-            response = requests.get(self.url, timeout=self.timeout)
+            response = requests.get(self.url, timeout=(self.timeout_conn, self.timeout_read))
             response.raise_for_status()
             return response
         except requests.exceptions.RequestException as err:
