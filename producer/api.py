@@ -53,7 +53,7 @@ class ApiRequest:
         # Filtra e retorna os status_agente que possuem um 'id' com mais de 10 caracteres
         return [
             status_agente for status_agente in status_agente_json
-            if len(status_agente['id']) > 10
+            if len(status_agente['id']) >= 10
         ]
     
   
