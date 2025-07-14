@@ -11,13 +11,18 @@ services:
       - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
       - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
       - KAFKA_CFG_NUM_PARTITIONS=3
-      - ALLOW_PLAINTEXT_LISTENER=yes
+      - ALLOW_PLAINTEXT_LISTENER=yesi
+      - KAFKA_HEAP_OPTS=-Xms512m -Xmx1g
     depends_on:
       - zookeeper
     networks:
       - application_network
     volumes:
       - kafka_data:/bitnami/kafka
+    deploy:
+      resources:
+        limits:
+          memory: 1.2g
 
   zookeeper:
     image: bitnami/zookeeper:latest
