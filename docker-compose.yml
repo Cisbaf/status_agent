@@ -1,118 +1,96 @@
 services:
-  kafka:
-    image: bitnami/kafka:latest
-    container_name: kafka-status-agent
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: rabbitmq-status-agent-remote
     restart: always
     ports:
-      - 9092:9092
+      - "5673:5672"
+      - "15673:15672"
     environment:
-      - KAFKA_CFG_BROKER_ID=1
-      - KAFKA_CFG_LISTENERS=PLAINTEXT://:9092
-      - KAFKA_CFG_ADVERTISED_LISTENERS=PLAINTEXT://kafka:9092
-      - KAFKA_CFG_ZOOKEEPER_CONNECT=zookeeper:2181
-      - KAFKA_CFG_NUM_PARTITIONS=3
-      - ALLOW_PLAINTEXT_LISTENER=yesi
-      - KAFKA_HEAP_OPTS=-Xms512m -Xmx1g
-    depends_on:
-      - zookeeper
-    networks:
-      - application_network
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_DEFAULT_USER}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_DEFAULT_PASS}
     volumes:
-      - kafka_data:/bitnami/kafka
-    deploy:
-      resources:
-        limits:
-          memory: 1.2g
-
-  zookeeper:
-    image: bitnami/zookeeper:latest
-    container_name: zookeeper-status-agent
-    ports:
-      - 2181:2181
-    restart: always
-    environment:
-      - ALLOW_ANONYMOUS_LOGIN=yes
+      - rabbitmq_data:/var/lib/rabbitmq
     networks:
-      - application_network
-
-  kafka-ui:
-    image: provectuslabs/kafka-ui
-    container_name: kafka-ui-status-agent
-    depends_on:
-      - kafka
-      - zookeeper
-    ports:
-      - "8080:8080"
-    restart: always
-    environment:
-      - KAFKA_CLUSTERS_0_NAME=DataWayBR
-      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:9092
-      - KAFKA_CLUSTERS_0_ZOOKEEPER=zookeeper:2181
-    networks:
-      - application_network
+      - application_network_remote
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   mongo:
-    image: mongo:latest
-    container_name: mongo-status-agent
+    image: mongo:8.0.5
+    container_name: mongo-status-agent-remote
+    command: ["mongod", "--wiredTigerCacheSizeGB", "1.5"]
     environment:
-      MONGO_INITDB_ROOT_USERNAME: root
-      MONGO_INITDB_ROOT_PASSWORD: 7890380
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
     volumes:
       - mongo_data:/data/db
     restart: always
     ports:
-      - "27017:27017"
+      - "27018:27017"
     networks:
-      - application_network
+      - application_network_remote
+    deploy:
+      resources:
+        limits:
+          memory: 2g
 
   mongo-express:
     image: mongo-express:latest
-    container_name: mongo-express-status-agent
+    container_name: mongo-express-status-agent-remote
     environment:
       ME_CONFIG_MONGODB_SERVER: mongo
-      ME_CONFIG_MONGODB_ADMINUSERNAME: root
-      ME_CONFIG_MONGODB_ADMINPASSWORD: 7890380
-      ME_CONFIG_BASICAUTH_USERNAME: admin
-      ME_CONFIG_BASICAUTH_PASSWORD: admingeral
+      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USERNAME}
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD}
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGO_EXPRESS_BASICAUTH_USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGO_EXPRESS_BASICAUTH_PASSWORD}
     ports:
-      - "8081:8081"
+      - "8082:8081"
     restart: always
     networks:
-      - application_network
+      - application_network_remote
     depends_on:
       - mongo
-      
+
   producer:
-    container_name: producer-status-agent
+    container_name: producer-status-agent-remote
     build:
       context: .
       dockerfile: ./producer/Dockerfile
     depends_on:
-      - kafka
+      rabbitmq:
+        condition: service_healthy
     env_file:
       - .env
     restart: always
     networks:
-      - application_network
+      - application_network_remote
 
   consumer:
-    container_name: consumer-status-agent
+    container_name: consumer-status-agent-remote
     build:
       context: .
       dockerfile: ./consumer/Dockerfile
     restart: always
     depends_on:
-      - kafka
-      - mongo
+      rabbitmq:
+        condition: service_healthy
+      mongo:
+        condition: service_started
     env_file:
       - .env
     networks:
-      - application_network
+      - application_network_remote
 
 volumes:
   mongo_data:
-  kafka_data:
+    external: true
+    name: status_agent_mongo_data
+  rabbitmq_data:
 
 networks:
-  application_network:
+  application_network_remote:
     driver: bridge

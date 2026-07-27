@@ -1,13 +1,13 @@
 import requests
 import xmltodict
-from control_producer import CachedKafkaProducer
+from control_producer import CachedRabbitMQProducer
 from datetime import datetime
 from utils import convert_time
 
 
 class ApiRequest:
 
-    def __init__(self, url: str, topic_api: str, producer: CachedKafkaProducer, timeout_conn=1, timeout_read=1):
+    def __init__(self, url: str, topic_api: str, producer: CachedRabbitMQProducer, timeout_conn=1, timeout_read=1):
         self.url = url
         self.topic = topic_api
         self.timeout_conn = timeout_conn

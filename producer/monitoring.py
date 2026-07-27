@@ -1,4 +1,4 @@
-from control_producer import CachedKafkaProducer
+from control_producer import CachedRabbitMQProducer
 from api import ApiRequest
 from datetime import datetime, timedelta
 import time
@@ -6,7 +6,7 @@ from utils import convert_time
 
 class MonitoringStatusAgent:
 
-    def __init__(self, api: ApiRequest, producer: CachedKafkaProducer, topic: str):
+    def __init__(self, api: ApiRequest, producer: CachedRabbitMQProducer, topic: str):
         self.api = api
         self.producer =producer
         self.topic = topic
@@ -29,15 +29,15 @@ class MonitoringStatusAgent:
         data['last_date_dt'] = last_date_dt.strftime("%d/%m/%Y, %H:%M:%S")
 
         try:
-            # Envia a mensagem para o Kafka
+            # Envia a mensagem para o RabbitMQ
             self.producer.send(
                 topic=self.topic,
                 key=str(data['id']).encode('utf-8'),
                 value=data,
             )
         except Exception as e:
-            # Se houver erro ao enviar a mensagem para o Kafka, imprime o erro
-            print(f"Erro ao enviar para o Kafka: {e}")
+            # Se houver erro ao enviar a mensagem para o RabbitMQ, imprime o erro
+            print(f"Erro ao enviar para o RabbitMQ: {e}")
 
     def _check_updates_(self, data: dict, dt: datetime):
         # Verifica se já existem dados anteriores para o 'id' e obtém as diferenças
@@ -46,7 +46,7 @@ class MonitoringStatusAgent:
         # Se não houver dados anteriores, não há alterações
         if last_data_agent:
             for key in last_data_agent.keys():
-                # Se houver alterações, registra no Kafka
+                # Se houver alterações, registra no RabbitMQ
                 if (key not in ["last_date", "date_status", "date_now"]
                     and last_data_agent[key] != data[key]
                 ):
