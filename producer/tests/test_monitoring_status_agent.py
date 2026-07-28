@@ -89,3 +89,19 @@ def test_check_updates_returns_false_when_no_previous_data(monitoring, mock_prod
 
     assert result is False
     mock_producer.send.assert_not_called()
+
+
+def test_check_registry_adds_iso_date_fields(monitoring, mock_producer):
+    data = make_agent_data(date_status="00:00:05", last_date="00:01:00")
+    dt = datetime(2026, 1, 15, 12, 0, 0)
+
+    monitoring._check_registry_(data, dt)
+
+    _, kwargs = mock_producer.send.call_args
+    sent_value = kwargs["value"]
+    assert "date_status_dt_iso" in sent_value
+    assert "last_date_dt_iso" in sent_value
+    # date_status_dt_iso deve corresponder ao mesmo instante que date_status_dt,
+    # apenas em formato ISO 8601 (sem conversão de fuso horário)
+    assert sent_value["date_status_dt_iso"] == "2026-01-15T11:59:55"
+    assert sent_value["date_status_dt"] == "15/01/2026, 11:59:55"

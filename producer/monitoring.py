@@ -24,9 +24,23 @@ class MonitoringStatusAgent:
         date_status_dt = self._convert_time_to_datetime_(data['date_status'], dt)
         last_date_dt = self._convert_time_to_datetime_(data['last_date'], dt)
 
-        # Atualiza os campos com os valores formatados
+        # Atualiza os campos com os valores formatados (string, formato legado)
         data['date_status_dt'] = date_status_dt.strftime("%d/%m/%Y, %H:%M:%S")
         data['last_date_dt'] = last_date_dt.strftime("%d/%m/%Y, %H:%M:%S")
+
+        # Campos equivalentes em ISO 8601, para permitir range queries nativas
+        # no MongoDB (Date real) em vez de regex sobre string.
+        # IMPORTANTE: date_status_dt/last_date_dt já estão em horário local
+        # de Brasília (ver utils.convert_time). Aqui NÃO fazemos conversão
+        # de fuso: os dígitos gravados são os mesmos do horário local, de
+        # propósito, pois as análises precisam do horário real do evento em
+        # horário de Brasília, não do instante equivalente em UTC. O MongoDB
+        # vai rotular/exibir esse valor como UTC (comportamento padrão do
+        # driver para datetime "naive"), mas os números representam o
+        # horário local — quem consultar por intervalo de datas deve usar
+        # os mesmos limites em horário local, sem tzinfo.
+        data['date_status_dt_iso'] = date_status_dt.isoformat()
+        data['last_date_dt_iso'] = last_date_dt.isoformat()
 
         try:
             # Envia a mensagem para o RabbitMQ

@@ -1,12 +1,30 @@
 import json
 import os
 import time
+from datetime import datetime
 
 import pika
 import pymongo
 from pika.exceptions import AMQPError
 
 from monitoring import MonitoringController
+
+ISO_DATE_FIELDS = ("date_status_dt_iso", "last_date_dt_iso")
+
+
+def parse_iso_date_fields(data: dict) -> dict:
+    """Converte os campos de data em ISO 8601 (string) para datetime real,
+    para que o pymongo os grave como o tipo Date nativo do MongoDB em vez
+    de string. Campos ausentes ou inválidos são ignorados silenciosamente
+    (mensagens antigas, gravadas antes desta mudança, podem não os ter)."""
+    for field in ISO_DATE_FIELDS:
+        value = data.get(field)
+        if isinstance(value, str):
+            try:
+                data[field] = datetime.fromisoformat(value)
+            except ValueError:
+                pass
+    return data
 
 # Obter Variaveis de Ambiente
 queue = os.getenv("QUEUE_STATUS_AGENT")
@@ -19,6 +37,7 @@ def make_on_message(monitoring: MonitoringController):
     def on_message(channel, method, properties, body):
         try:
             data = json.loads(body.decode("utf-8"))
+            data = parse_iso_date_fields(data)
             monitoring.check(data)
             channel.basic_ack(delivery_tag=method.delivery_tag)
         except Exception as e:
