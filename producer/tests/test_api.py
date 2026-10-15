@@ -86,3 +86,44 @@ def test_get_raises_for_status_error_is_handled(api_request, mock_producer):
 
     assert result == []
     mock_producer.send.assert_called_once()
+
+
+XML_RESPONSE_NUMERIC_IDS = """<?xml version="1.0"?>
+<system>
+    <status_agente><id>1</id><status>0</status></status_agente>
+    <status_agente><id>2</id><status>0</status></status_agente>
+    <status_agente><id>413539784</id><status>0</status></status_agente>
+    <status_agente><id>1234567890</id><status>0</status></status_agente>
+    <status_agente><id>12345678901</id><status>0</status></status_agente>
+    <status_agente><id>123456789012</id><status>0</status></status_agente>
+</system>
+"""
+
+
+def test_get_zfills_9_digit_ids_and_drops_test_ids(api_request):
+    mock_response = MagicMock()
+    mock_response.text = XML_RESPONSE_NUMERIC_IDS
+    mock_response.raise_for_status.return_value = None
+
+    with patch("api.requests.get", return_value=mock_response):
+        result = api_request.get()
+
+    assert [item["id"] for item in result] == [
+        "00413539784",
+        "1234567890",
+        "12345678901",
+        "123456789012",
+    ]
+
+
+@pytest.mark.parametrize("raw, expected", [
+    ("413539784", "00413539784"),
+    ("1234567890", "1234567890"),
+    ("12345678901", "12345678901"),
+    ("123456789012", "123456789012"),
+    ("12345678", "12345678"),
+    ("1", "1"),
+    ("AGENTE1234567", "AGENTE1234567"),
+])
+def test_normalize_id(raw, expected):
+    assert ApiRequest._normalize_id_(raw) == expected

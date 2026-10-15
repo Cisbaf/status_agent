@@ -50,10 +50,20 @@ class ApiRequest:
         # Acessa o nó "status_agente" dentro da estrutura JSON
         status_agente_json = dict_data.get("system", {}).get("status_agente", [])
 
-        # Filtra e retorna os status_agente que possuem um 'id' com mais de 10 caracteres
-        return [
-            status_agente for status_agente in status_agente_json
-            if len(status_agente['id']) >= 10
-        ]
+        # Normaliza os ids e filtra os status_agente que possuem um 'id' com 10 ou mais caracteres
+        result = []
+        for status_agente in status_agente_json:
+            status_agente['id'] = self._normalize_id_(status_agente['id'])
+            if len(status_agente['id']) >= 10:
+                result.append(status_agente)
+        return result
+
+    @staticmethod
+    def _normalize_id_(agent_id: str):
+        # A API remove os zeros à esquerda dos ids numéricos (ex.: 00413539784 -> 413539784).
+        # Só ids de 9 dígitos são completados, para não mudar a collection dos ids de 10+ já gravados.
+        if agent_id.isdigit() and len(agent_id) == 9:
+            return agent_id.zfill(11)
+        return agent_id
     
   
